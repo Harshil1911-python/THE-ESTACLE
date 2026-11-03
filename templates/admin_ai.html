@@ -121,10 +121,31 @@
     setBusy(true);
     fetch('{{ url_for("ai.estacle_ai_chat") }}', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      },
       body: JSON.stringify({ message: text, history: history.slice(0, -1) })
-    }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
-    .then(function (res) {
+    }).then(function (r) {
+      return r.text().then(function (raw) {
+        var j = null;
+        try { j = raw ? JSON.parse(raw) : null; } catch (e) { j = null; }
+        if (!j) {
+          var snippet = (raw || '').replace(/<[^>]+>/g, ' ').trim().slice(0, 180);
+          return {
+            ok: false,
+            j: {
+              error: 'Server returned non-JSON (HTTP ' + r.status + '). '
+                + (snippet || 'Is /admin/ai/chat deployed? Restart the app after pulling latest code.'),
+              reply: null
+            }
+          };
+        }
+        return { ok: r.ok, j: j };
+      });
+    }).then(function (res) {
       setBusy(false);
       if (res.j.error && !res.j.reply) { appendMsg('assistant', 'Error: ' + res.j.error); return; }
       var reply = res.j.reply || '(no response)';
