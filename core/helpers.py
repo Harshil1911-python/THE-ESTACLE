@@ -56,16 +56,24 @@ def format_money(amount, currency=None):
 
 
 def log_activity(action, entity_type=None, entity_id=None, details=None):
+    """Record an action in activity_log. Uses local wall-clock time so 'today' filters work."""
     try:
+        from datetime import datetime
         db = get_db()
         uid = session.get('user_id')
+        now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         db.execute(
-            'INSERT INTO activity_log (user_id, action, entity_type, entity_id, details) VALUES (?, ?, ?, ?, ?)',
-            (uid, action, entity_type, entity_id, details)
+            'INSERT INTO activity_log (user_id, action, entity_type, entity_id, details, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+            (uid, action, entity_type, entity_id, details, now)
         )
         db.commit()
-    except Exception:
-        pass
+    except Exception as e:
+        # Never break the main request; log to stderr for debugging
+        try:
+            import sys
+            print(f'[log_activity] failed: {e}', file=sys.stderr)
+        except Exception:
+            pass
 
 
 def get_redirect_for_role(role):
