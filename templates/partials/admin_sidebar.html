@@ -5,7 +5,7 @@
         </div>
     </div>
     <nav class="sidebar-nav">
-        <div class="nav-dropdown {% if active in ['dashboard', 'analytics', 'search'] %}open has-active{% endif %}">
+        <div class="nav-dropdown {% if active in ['dashboard', 'analytics', 'search', 'ai'] %}open has-active{% endif %}">
             <button type="button" class="nav-dropdown-toggle" onclick="this.parentElement.classList.toggle('open')">
                 <svg class="nav-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
                 <span>Overview</span>
@@ -15,6 +15,7 @@
                 <a href="{{ url_for('admin.admin_dashboard') }}" class="nav-subitem {% if active == 'dashboard' %}active{% endif %}">Dashboard</a>
                 <a href="{{ url_for('admin.admin_analytics') }}" class="nav-subitem {% if active == 'analytics' %}active{% endif %}">Analytics</a>
                 <a href="{{ url_for('admin.admin_search') }}" class="nav-subitem {% if active == 'search' %}active{% endif %}">Global Search</a>
+                <a href="{{ url_for('ai.estacle_ai') }}" class="nav-subitem {% if active == 'ai' %}active{% endif %}">ESTACLE AI</a>
             </div>
         </div>
 
