@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Estacle | ESTACLE AI</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+.ai-wrap { padding: 8px 28px 40px; max-width: 920px; }
+.ai-hero { background: linear-gradient(135deg, #1e1b4b 0%, #4f46e5 55%, #6366f1 100%); border-radius: 18px; padding: 22px 26px; color: #fff; margin-bottom: 18px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.ai-hero h1 { margin: 0 0 4px; font-size: 22px; font-weight: 700; }
+.ai-hero p { margin: 0; opacity: 0.85; font-size: 13.5px; }
+.key-badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); padding: 8px 14px; border-radius: 999px; font-size: 12.5px; font-weight: 500; }
+.key-badge.ok { background: rgba(16,185,129,0.2); border-color: rgba(16,185,129,0.4); }
+.key-badge.warn { background: rgba(251,191,36,0.2); border-color: rgba(251,191,36,0.45); }
+.ai-config { background: #fff; border: 1px solid #e8ecf1; border-radius: 14px; padding: 16px 18px; margin-bottom: 16px; }
+.ai-config summary { cursor: pointer; font-weight: 600; font-size: 13.5px; color: #0f172a; list-style: none; }
+.ai-config form { margin-top: 14px; display: flex; gap: 10px; flex-wrap: wrap; align-items: end; }
+.ai-config label { display: block; font-size: 12px; color: #64748b; margin-bottom: 4px; font-weight: 500; }
+.ai-config input { width: min(420px, 100%); height: 40px; padding: 0 12px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 13.5px; font-family: inherit; }
+.ai-config .btn-save { height: 40px; padding: 0 16px; border: none; border-radius: 10px; background: #1e1b4b; color: #fff; font-weight: 600; font-size: 13px; cursor: pointer; }
+.ai-config .hint { font-size: 12px; color: #94a3b8; margin-top: 8px; }
+.chat-panel { background: #fff; border: 1px solid #e8ecf1; border-radius: 16px; display: flex; flex-direction: column; height: min(62vh, 620px); overflow: hidden; }
+.chat-messages { flex: 1; overflow-y: auto; padding: 18px; display: flex; flex-direction: column; gap: 12px; }
+.msg { max-width: 88%; padding: 12px 14px; border-radius: 14px; font-size: 13.5px; line-height: 1.55; white-space: pre-wrap; word-break: break-word; }
+.msg.user { align-self: flex-end; background: #1e1b4b; color: #fff; }
+.msg.assistant { align-self: flex-start; background: #f1f5f9; color: #0f172a; }
+.msg.system { align-self: center; color: #94a3b8; font-size: 12.5px; text-align: center; max-width: 100%; }
+.msg .tools { margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(0,0,0,0.06); font-size: 11.5px; color: #64748b; }
+.chat-input-bar { border-top: 1px solid #f1f5f9; padding: 12px 14px; display: flex; gap: 10px; align-items: flex-end; background: #fafbfc; }
+.chat-input-bar textarea { flex: 1; min-height: 44px; max-height: 120px; resize: none; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 12px; font-family: inherit; font-size: 13.5px; outline: none; }
+.chat-input-bar button { height: 44px; padding: 0 18px; border: none; border-radius: 12px; background: #4f46e5; color: #fff; font-weight: 600; font-size: 13.5px; cursor: pointer; }
+.chat-input-bar button:disabled { opacity: 0.55; cursor: not-allowed; }
+.suggestions { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 14px; }
+.suggestions button { border: 1px solid #e2e8f0; background: #fff; border-radius: 999px; padding: 7px 12px; font-size: 12.5px; color: #334155; cursor: pointer; font-family: inherit; }
+.typing { align-self: flex-start; color: #94a3b8; font-size: 12.5px; padding: 4px 8px; }
+</style>
+</head>
+<body>
+<div class="app-layout">
+{% set active = 'ai' %}
+{% include 'partials/admin_sidebar.html' %}
+<main class="main-content">
+<header class="top-bar" style="padding: 16px 28px 0; border: none; background: transparent; box-shadow: none;">
+<div><h1 class="page-title" style="margin:0;">ESTACLE AI</h1>
+<p class="page-subtitle" style="margin:2px 0 0;">Gemini-powered assistant for your entire CRM</p></div>
+</header>
+<div class="ai-wrap">
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}{% for category, message in messages %}<div class="alert alert-{{ category }}">{{ message }}</div>{% endfor %}{% endif %}
+{% endwith %}
+<div class="ai-hero">
+<div><h1>ESTACLE AI</h1>
+<p>Add customers, schedule meetings, manage properties, users, tasks and deals.</p></div>
+{% if has_key %}<span class="key-badge ok">API key connected · {{ masked_key }}</span>
+{% else %}<span class="key-badge warn">API key required</span>{% endif %}
+</div>
+<details class="ai-config" {% if not has_key %}open{% endif %}>
+<summary>Gemini API key configuration</summary>
+<form method="POST"><input type="hidden" name="action" value="save_key">
+<div><label for="gemini_api_key">Google AI Studio API key</label>
+<input type="password" id="gemini_api_key" name="gemini_api_key" placeholder="AIza..." autocomplete="off"></div>
+<button type="submit" class="btn-save">Save key</button></form>
+<p class="hint">Get a free key at <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a></p>
+</details>
+<div class="suggestions" id="suggestions">
+<button type="button" data-q="Show me CRM stats">CRM stats</button>
+<button type="button" data-q="List the latest 5 clients">Latest clients</button>
+<button type="button" data-q="Create a new lead named Riya Sharma, phone +919876543210, budget 8500000, city Mumbai">Add a lead</button>
+<button type="button" data-q="Schedule a viewing tomorrow at 3pm for the most recent client">Schedule viewing</button>
+<button type="button" data-q="Create a high priority task: Follow up with new leads, due tomorrow">Create task</button>
+</div>
+<div class="chat-panel">
+<div class="chat-messages" id="chatMessages">
+<div class="msg system">Ask Estacle AI to manage clients, properties, meetings, tasks, users and deals.</div>
+</div>
+<div class="chat-input-bar">
+<textarea id="chatInput" rows="1" placeholder="{% if has_key %}Message Estacle AI...{% else %}Save a Gemini API key first...{% endif %}" {% if not has_key %}disabled{% endif %}></textarea>
+<button type="button" id="sendBtn" {% if not has_key %}disabled{% endif %}>Send</button>
+</div>
+</div>
+</div>
+</main>
+</div>
+<script>
+(function () {
+  var messagesEl = document.getElementById('chatMessages');
+  var input = document.getElementById('chatInput');
+  var sendBtn = document.getElementById('sendBtn');
+  var history = [];
+  function appendMsg(role, text, tools) {
+    var div = document.createElement('div');
+    div.className = 'msg ' + role;
+    div.textContent = text || '';
+    if (tools && tools.length) {
+      var t = document.createElement('div');
+      t.className = 'tools';
+      t.textContent = tools.map(function (x) { return 'Tool: ' + x.tool; }).join(' · ');
+      div.appendChild(t);
+    }
+    messagesEl.appendChild(div);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+  function setBusy(busy) {
+    sendBtn.disabled = busy || {{ 'true' if not has_key else 'false' }};
+    input.disabled = busy || {{ 'true' if not has_key else 'false' }};
+    var existing = document.getElementById('typing');
+    if (busy && !existing) {
+      var t = document.createElement('div');
+      t.className = 'typing'; t.id = 'typing'; t.textContent = 'Estacle AI is thinking...';
+      messagesEl.appendChild(t); messagesEl.scrollTop = messagesEl.scrollHeight;
+    } else if (!busy && existing) { existing.remove(); }
+  }
+  function send(text) {
+    text = (text || '').trim();
+    if (!text) return;
+    appendMsg('user', text);
+    history.push({ role: 'user', content: text });
+    input.value = '';
+    setBusy(true);
+    fetch('{{ url_for("ai.estacle_ai_chat") }}', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: text, history: history.slice(0, -1) })
+    }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+    .then(function (res) {
+      setBusy(false);
+      if (res.j.error && !res.j.reply) { appendMsg('assistant', 'Error: ' + res.j.error); return; }
+      var reply = res.j.reply || '(no response)';
+      appendMsg('assistant', reply, res.j.tool_results);
+      history.push({ role: 'assistant', content: reply });
+    }).catch(function (err) { setBusy(false); appendMsg('assistant', 'Network error: ' + err); });
+  }
+  sendBtn.addEventListener('click', function () { send(input.value); });
+  input.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(input.value); }
+  });
+  document.getElementById('suggestions').addEventListener('click', function (e) {
+    var btn = e.target.closest('button[data-q]');
+    if (!btn || sendBtn.disabled) return;
+    send(btn.getAttribute('data-q'));
+  });
+})();
+</script>
+</body>
+</html>
