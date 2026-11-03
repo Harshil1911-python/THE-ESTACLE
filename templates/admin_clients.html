@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Estacle | Admin – Clients</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+html, body { height: 100%; overflow: hidden; }
+.app-layout { height: 100vh; overflow: hidden; }
+.main-content {
+  height: 100vh !important; max-height: 100vh !important; min-height: 0 !important;
+  overflow: hidden !important; display: flex !important; flex-direction: column !important;
+  padding-bottom: 0 !important; box-sizing: border-box;
+}
+.top-bar.dash-top {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 32px 10px !important; background: transparent; border: none;
+  box-shadow: none; gap: 12px; flex-wrap: wrap; flex-shrink: 0;
+}
+.dash-top .page-title { font-size: 20px; font-weight: 700; color: #0f172a; margin: 0 0 1px; letter-spacing: -0.02em; }
+.dash-top .page-subtitle { font-size: 12.5px; color: #64748b; margin: 0; }
+.top-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn-export {
+  display: inline-flex; align-items: center; height: 38px; padding: 0 14px;
+  background: #fff; color: #334155; border: 1px solid #e2e8f0; border-radius: 10px;
+  font-size: 13px; font-weight: 600; text-decoration: none;
+}
+.btn-create {
+  display: inline-flex; align-items: center; height: 38px; padding: 0 16px;
+  background: #0f172a; color: #fff; border-radius: 10px; font-size: 13px;
+  font-weight: 600; text-decoration: none;
+}
+.page-wrap {
+  flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column;
+  padding: 12px 32px 16px; overflow: hidden; gap: 14px; box-sizing: border-box;
+}
+.stat-row {
+  display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 12px; flex-shrink: 0;
+}
+@media (max-width: 1200px) { .stat-row { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (max-width: 700px) { .stat-row { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+a.stat-card.kpi-soft {
+  background: #fff; border: 1px solid #e8ecf1; border-radius: 14px;
+  padding: 14px 16px; text-decoration: none; display: block;
+  box-shadow: 0 1px 2px rgba(15,23,42,0.04); min-width: 0;
+}
+a.stat-card.kpi-soft:hover { border-color: #c7d2fe; }
+a.stat-card.kpi-soft.active-filter { border-color: #c7d2fe; box-shadow: 0 0 0 3px rgba(79,70,229,0.08); }
+.kpi-soft .kpi-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
+.kpi-soft .kpi-label { font-size: 12px; font-weight: 500; color: #64748b; }
+.kpi-soft .kpi-value { font-size: 22px; font-weight: 700; color: #0f172a; letter-spacing: -0.03em; }
+.kpi-soft .kpi-sub { font-size: 11.5px; color: #94a3b8; margin-top: 2px; }
+.panel-card {
+  background: #fff; border: 1px solid #e8ecf1; border-radius: 14px;
+  box-shadow: 0 1px 2px rgba(15,23,42,0.04);
+  display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; overflow: hidden;
+}
+.panel-toolbar { padding: 14px 16px; border-bottom: 1px solid #f1f5f9; flex-shrink: 0; }
+.filter-form { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.filter-form input, .filter-form select {
+  height: 38px; padding: 0 12px; border: 1px solid #e2e8f0; border-radius: 10px;
+  font-size: 13px; font-family: inherit; color: #0f172a; background: #fff; outline: none;
+}
+.filter-form input[type="search"] { min-width: 200px; flex: 1; max-width: 280px; }
+.btn-filter {
+  height: 38px; padding: 0 16px; background: #0f172a; color: #fff; border: none;
+  border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
+}
+.btn-clear {
+  height: 38px; padding: 0 12px; background: #fff; color: #475569; border: 1px solid #e2e8f0;
+  border-radius: 10px; font-size: 13px; font-weight: 600; text-decoration: none;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.filter-count {
+  min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px;
+  background: #0f172a; color: #fff; font-size: 10.5px; font-weight: 700;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.results-meta { font-size: 12.5px; color: #64748b; margin-left: auto; }
+.results-meta strong { color: #0f172a; }
+.bulk-bar {
+  display: none; align-items: center; gap: 10px; padding: 10px 16px;
+  background: #f8fafc; border-bottom: 1px solid #f1f5f9; flex-wrap: wrap; flex-shrink: 0;
+}
+.bulk-bar.show { display: flex; }
+.bulk-bar .bulk-count { font-size: 13px; font-weight: 600; color: #334155; }
+.bulk-bar button, .bulk-bar select {
+  height: 34px; padding: 0 12px; border-radius: 8px; font-size: 12.5px;
+  font-weight: 600; font-family: inherit; border: 1px solid #e8ecf1; background: #fff; color: #475569; cursor: pointer;
+}
+.bulk-bar button.danger { color: #b91c1c; border-color: #fecaca; }
+#bulkForm { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; overflow: hidden; margin: 0; }
+.table-scroll { flex: 1 1 auto; min-height: 0; overflow: auto; }
+.clients-table { width: 100%; border-collapse: collapse; }
+.clients-table th {
+  text-align: left; font-size: 11px; font-weight: 600; color: #64748b;
+  text-transform: uppercase; letter-spacing: 0.04em; padding: 12px 14px;
+  border-bottom: 1px solid #eef2f7; background: #fafbfc; position: sticky; top: 0; z-index: 2;
+}
+.clients-table td {
+  padding: 13px 14px; font-size: 13px; color: #334155;
+  border-bottom: 1px solid #f1f5f9; vertical-align: middle;
+}
+.clients-table tr:hover td { background: #f8fafc; }
+.clients-table .empty { text-align: center; color: #94a3b8; padding: 48px 12px; }
+.clients-table input[type="checkbox"] { width: 15px; height: 15px; cursor: pointer; accent-color: #0f172a; }
+.client-name { font-weight: 600; color: #0f172a; }
+.muted { color: #94a3b8; }
+.badge-status {
+  display: inline-block; font-size: 12.5px; font-weight: 600; text-transform: capitalize;
+  background: none; color: #475569;
+}
+.badge-status.lead { color: #0369a1; }
+.badge-status.contacted { color: #7c3aed; }
+.badge-status.qualified { color: #0d9488; }
+.badge-status.negotiation { color: #c2410c; }
+.badge-status.closed { color: #047857; }
+.badge-status.lost { color: #94a3b8; }
+.actions-cell { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.btn-sm {
+  font-size: 12.5px; font-weight: 600; color: #0f172a; text-decoration: none;
+  border-bottom: 1px solid #cbd5e1; padding-bottom: 1px; background: none;
+  border-top: 0; border-left: 0; border-right: 0; cursor: pointer; font-family: inherit;
+}
+.btn-sm.danger { color: #b91c1c; border-bottom-color: #fecaca; }
+.cards-scroll { flex: 1; min-height: 0; overflow: auto; padding: 14px; }
+.clients-cards {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px; align-content: start;
+}
+.client-card {
+  border: 1px solid #e2e8f0; border-radius: 12px; background: #fff; padding: 16px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.client-card h4 { margin: 0; font-size: 14px; font-weight: 700; color: #0f172a; }
+.client-card .meta { font-size: 12.5px; color: #64748b; margin: 0; }
+.toast-host {
+  position: fixed; left: 0; right: 0; bottom: 22px; z-index: 9999;
+  display: flex; justify-content: center; pointer-events: none;
+}
+.toast-sphere {
+  pointer-events: auto; background: #0f172a; color: #fff; padding: 11px 20px;
+  border-radius: 999px; font-size: 13px; font-weight: 500;
+  box-shadow: 0 10px 30px rgba(15,23,42,0.25); opacity: 0;
+  transform: translateY(12px); transition: 0.25s ease;
+}
+.toast-sphere.show { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+<div class="app-layout">
+{% set active = 'clients' %}
+{% include 'partials/admin_sidebar.html' %}
+<main class="main-content">
+<header class="top-bar dash-top">
+  <div>
+    <h1 class="page-title">Clients</h1>
+    <p class="page-subtitle">Pipeline of leads and clients across the agency</p>
+  </div>
+  <div class="top-actions">
+    <a href="{{ url_for('admin.admin_export_clients') }}" class="btn-export">Export CSV</a>
+    <a href="{{ url_for('admin.admin_add_client') }}" class="btn-create">+ Add Client</a>
+  </div>
+</header>
+
+<div class="page-wrap">
+  <div id="flash-data" style="display:none">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}{% for category, message in messages %}<span data-msg="{{ message|e }}"></span>{% endfor %}{% endif %}
+  {% endwith %}
+  </div>
+
+  <div class="stat-row">
+    <a class="stat-card kpi-soft {% if not status_filter %}active-filter{% endif %}" href="{{ url_for('admin.admin_clients', view=view) }}">
+      <div class="kpi-top"><span class="kpi-label">Total</span></div>
+      <div class="kpi-value">{{ stats.total }}</div>
+      <div class="kpi-sub">All clients</div>
+    </a>
+    <a class="stat-card kpi-soft {% if status_filter == 'lead' %}active-filter{% endif %}" href="{{ url_for('admin.admin_clients', status='lead', view=view) }}">
+      <div class="kpi-top"><span class="kpi-label">Lead</span></div>
+      <div class="kpi-value">{{ stats.lead }}</div>
+      <div class="kpi-sub">New inquiries</div>
+    </a>
+    <a class="stat-card kpi-soft {% if status_filter == 'contacted' %}active-filter{% endif %}" href="{{ url_for('admin.admin_clients', status='contacted', view=view) }}">
+      <div class="kpi-top"><span class="kpi-label">Contacted</span></div>
+      <div class="kpi-value">{{ stats.contacted }}</div>
+      <div class="kpi-sub">Reached out</div>
+    </a>
+    <a class="stat-card kpi-soft {% if status_filter == 'qualified' %}active-filter{% endif %}" href="{{ url_for('admin.admin_clients', status='qualified', view=view) }}">
+      <div class="kpi-top"><span class="kpi-label">Qualified</span></div>
+      <div class="kpi-value">{{ stats.qualified }}</div>
+      <div class="kpi-sub">Serious buyers</div>
+    </a>
+    <a class="stat-card kpi-soft {% if status_filter == 'negotiation' %}active-filter{% endif %}" href="{{ url_for('admin.admin_clients', status='negotiation', view=view) }}">
+      <div class="kpi-top"><span class="kpi-label">Negotiation</span></div>
+      <div class="kpi-value">{{ stats.negotiation }}</div>
+      <div class="kpi-sub">In discussion</div>
+    </a>
+    <a class="stat-card kpi-soft {% if status_filter == 'closed' %}active-filter{% endif %}" href="{{ url_for('admin.admin_clients', status='closed', view=view) }}">
+      <div class="kpi-top"><span class="kpi-label">Closed</span></div>
+      <div class="kpi-value">{{ stats.closed }}</div>
+      <div class="kpi-sub">Won deals</div>
+    </a>
+    <a class="stat-card kpi-soft {% if status_filter == 'lost' %}active-filter{% endif %}" href="{{ url_for('admin.admin_clients', status='lost', view=view) }}">
+      <div class="kpi-top"><span class="kpi-label">Lost</span></div>
+      <div class="kpi-value">{{ stats.lost }}</div>
+      <div class="kpi-sub">Not proceeding</div>
+    </a>
+  </div>
+
+  <div class="panel-card">
+    <div class="panel-toolbar">
+      <form method="GET" class="filter-form" action="{{ url_for('admin.admin_clients') }}">
+        {% if view %}<input type="hidden" name="view" value="{{ view }}">{% endif %}
+        <input type="search" name="q" value="{{ q or '' }}" placeholder="Search clients">
+        <select name="status">
+          <option value="">Status</option>
+          <option value="lead" {% if status_filter == 'lead' %}selected{% endif %}>Lead</option>
+          <option value="contacted" {% if status_filter == 'contacted' %}selected{% endif %}>Contacted</option>
+          <option value="qualified" {% if status_filter == 'qualified' %}selected{% endif %}>Qualified</option>
+          <option value="negotiation" {% if status_filter == 'negotiation' %}selected{% endif %}>Negotiation</option>
+          <option value="closed" {% if status_filter == 'closed' %}selected{% endif %}>Closed</option>
+          <option value="lost" {% if status_filter == 'lost' %}selected{% endif %}>Lost</option>
+        </select>
+        <select name="agent_id">
+          <option value="">Agent</option>
+          {% for a in agents %}
+          <option value="{{ a.id }}" {% if agent_id == a.id|string %}selected{% endif %}>{{ a.full_name }}</option>
+          {% endfor %}
+        </select>
+        <input type="text" name="source" value="{{ source or '' }}" placeholder="Source" style="width:120px">
+        <button type="submit" class="btn-filter">Apply</button>
+        {% if active_filters %}
+        <a href="{{ url_for('admin.admin_clients', view=view) }}" class="btn-clear">Clear <span class="filter-count">{{ active_filters }}</span></a>
+        {% endif %}
+        <span class="results-meta"><strong>{{ clients|length }}</strong> result{{ 's' if clients|length != 1 else '' }}</span>
+        {% if view == 'cards' %}
+        <a href="{{ url_for('admin.admin_clients', q=q, status=status_filter, agent_id=agent_id, source=source) }}" class="btn-clear">← Table</a>
+        {% else %}
+        <a href="{{ url_for('admin.admin_clients', view='cards', q=q, status=status_filter, agent_id=agent_id, source=source) }}" class="btn-clear">Panel</a>
+        {% endif %}
+      </form>
+    </div>
+
+    {% if view == 'cards' %}
+    <div class="cards-scroll">
+      <div class="clients-cards">
+        {% for c in clients %}
+        <div class="client-card">
+          <h4>{{ c.full_name }}</h4>
+          <p class="meta">{{ c.email or '—' }} · {{ c.phone or '—' }}</p>
+          <span class="badge-status {{ c.status }}">{{ c.status }}</span>
+          <p class="meta">{{ c.agent_name or 'Unassigned' }} · {{ c.added_label }}</p>
+          {% if c.preferred_city %}<p class="meta">Prefers {{ c.preferred_city }}</p>{% endif %}
+          <div class="actions-cell" style="margin-top:8px">
+            <a href="{{ url_for('admin.admin_client_detail', client_id=c.id) }}" class="btn-sm">Details</a>
+            <a href="{{ url_for('admin.admin_edit_client', client_id=c.id) }}" class="btn-sm">Edit</a>
+          </div>
+        </div>
+        {% else %}
+        <p style="grid-column:1/-1;text-align:center;color:#94a3b8;padding:40px">No clients match these filters</p>
+        {% endfor %}
+      </div>
+    </div>
+    {% else %}
+    <form method="POST" action="{{ url_for('admin.admin_bulk_clients') }}" id="bulkForm">
+      <div class="bulk-bar" id="bulkBar">
+        <span class="bulk-count"><span id="bulkCount">0</span> selected</span>
+        <select name="action" id="bulkAction">
+          <option value="">Bulk action…</option>
+          <option value="delete">Delete selected</option>
+          <option value="lead">Set lead</option>
+          <option value="contacted">Set contacted</option>
+          <option value="qualified">Set qualified</option>
+          <option value="negotiation">Set negotiation</option>
+          <option value="closed">Set closed</option>
+          <option value="lost">Set lost</option>
+        </select>
+        <button type="submit" class="danger" onclick="return confirmBulk();">Apply</button>
+      </div>
+      <div class="table-scroll">
+        <table class="clients-table">
+          <thead>
+            <tr>
+              <th style="width:36px"><input type="checkbox" id="selectAll"></th>
+              <th>Name</th>
+              <th>Contact</th>
+              <th>Status</th>
+              <th>Source</th>
+              <th>Budget</th>
+              <th>City</th>
+              <th>Agent</th>
+              <th>Added</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in clients %}
+            <tr>
+              <td><input type="checkbox" name="ids" value="{{ c.id }}" class="row-check"></td>
+              <td><span class="client-name">{{ c.full_name }}</span></td>
+              <td>
+                <div>{{ c.email or '—' }}</div>
+                <div class="muted">{{ c.phone or '' }}</div>
+              </td>
+              <td><span class="badge-status {{ c.status }}">{{ c.status }}</span></td>
+              <td>{{ c.source or '—' }}</td>
+              <td>{% if c.budget %}₹{{ '{:,.0f}'.format(c.budget|float) }}{% else %}—{% endif %}</td>
+              <td>{{ c.preferred_city or '—' }}</td>
+              <td>{{ c.agent_name or '—' }}</td>
+              <td class="muted">{{ c.added_label }}</td>
+              <td>
+                <div class="actions-cell">
+                  <a href="{{ url_for('admin.admin_client_detail', client_id=c.id) }}" class="btn-sm">Details</a>
+                  <a href="{{ url_for('admin.admin_edit_client', client_id=c.id) }}" class="btn-sm">Edit</a>
+                  <button type="button" class="btn-sm danger" onclick="deleteClient({{ c.id }})">Delete</button>
+                </div>
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="10" class="empty">No clients match these filters</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </form>
+    {% endif %}
+  </div>
+</div>
+</main>
+</div>
+<div class="toast-host" id="toastHost"></div>
+<script>
+function deleteClient(id) {
+  if (!confirm('Delete this client?')) return;
+  var f = document.createElement('form');
+  f.method = 'POST';
+  f.action = '/admin/clients/delete/' + id;
+  document.body.appendChild(f);
+  f.submit();
+}
+function confirmBulk() {
+  var a = document.getElementById('bulkAction');
+  if (!a || !a.value) { alert('Choose a bulk action'); return false; }
+  if (a.value === 'delete') return confirm('Delete selected clients permanently?');
+  return true;
+}
+(function(){
+  var selectAll = document.getElementById('selectAll');
+  var bar = document.getElementById('bulkBar');
+  var countEl = document.getElementById('bulkCount');
+  function checks(){ return Array.prototype.slice.call(document.querySelectorAll('.row-check')); }
+  function refresh(){
+    var list = checks();
+    var n = list.filter(function(c){ return c.checked; }).length;
+    if (countEl) countEl.textContent = n;
+    if (bar) bar.classList.toggle('show', n > 0);
+    if (selectAll) selectAll.checked = list.length > 0 && n === list.length;
+  }
+  if (selectAll) selectAll.addEventListener('change', function(){
+    checks().forEach(function(c){ c.checked = selectAll.checked; });
+    refresh();
+  });
+  document.addEventListener('change', function(e){
+    if (e.target && e.target.classList && e.target.classList.contains('row-check')) refresh();
+  });
+  var host = document.getElementById('toastHost'), data = document.getElementById('flash-data');
+  if (host && data) {
+    var items = data.querySelectorAll('span[data-msg]');
+    if (items.length) {
+      var el = document.createElement('div');
+      el.className = 'toast-sphere';
+      el.textContent = items[0].getAttribute('data-msg') || 'Done';
+      host.appendChild(el);
+      requestAnimationFrame(function(){ el.classList.add('show'); });
+      setTimeout(function(){ el.remove(); }, 2800);
+    }
+  }
+})();
+</script>
+</body>
+</html>

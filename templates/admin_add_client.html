@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Estacle | Add Client</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+.main-content { background: #f8fafc; min-height: 100vh; padding-bottom: 40px; }
+.top-bar.dash-top {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 28px !important; background: #fff; border-bottom: 1px solid #e8ecf1;
+  box-shadow: none;
+}
+.dash-top .page-title { font-size: 20px; font-weight: 700; color: #0f172a; margin: 0 0 2px; }
+.dash-top .page-subtitle { font-size: 13px; color: #64748b; margin: 0; }
+.form-shell { max-width: 720px; margin: 24px auto; padding: 0 20px; }
+.form-card {
+  background: #fff; border: 1px solid #e8ecf1; border-radius: 14px;
+  box-shadow: 0 1px 2px rgba(15,23,42,0.04); padding: 22px 24px;
+}
+.sec {
+  font-size: 12px; font-weight: 700; color: #0f172a; text-transform: uppercase;
+  letter-spacing: 0.04em; margin: 18px 0 12px; padding-top: 8px; border-top: 1px solid #f1f5f9;
+}
+.sec:first-child { margin-top: 0; border-top: none; padding-top: 0; }
+.g { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 640px) { .g { grid-template-columns: 1fr; } }
+.fg { display: flex; flex-direction: column; gap: 5px; }
+.fg.full { grid-column: 1 / -1; }
+.fg label { font-size: 12px; font-weight: 600; color: #64748b; }
+.fg input, .fg select, .fg textarea {
+  height: 40px; padding: 0 12px; border: 1px solid #e2e8f0; border-radius: 10px;
+  font-size: 13.5px; font-family: inherit; color: #0f172a; outline: none; box-sizing: border-box; width: 100%;
+}
+.fg textarea { height: auto; min-height: 88px; padding: 10px 12px; resize: vertical; }
+.fg input:focus, .fg select:focus, .fg textarea:focus {
+  border-color: #94a3b8; box-shadow: 0 0 0 2px rgba(15,23,42,0.06);
+}
+.hint { font-size: 11.5px; color: #94a3b8; }
+.form-ft {
+  display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;
+  padding-top: 16px; border-top: 1px solid #f1f5f9;
+}
+.btn-save {
+  height: 40px; padding: 0 18px; background: #0f172a; color: #fff; border: none;
+  border-radius: 10px; font-size: 13.5px; font-weight: 600; cursor: pointer; font-family: inherit;
+}
+.btn-cancel {
+  height: 40px; padding: 0 16px; background: #fff; color: #475569; border: 1px solid #e2e8f0;
+  border-radius: 10px; font-size: 13.5px; font-weight: 600; text-decoration: none;
+  display: inline-flex; align-items: center;
+}
+</style>
+</head>
+<body>
+<div class="app-layout">
+{% set active = 'add_client' %}
+{% include 'partials/admin_sidebar.html' %}
+<main class="main-content">
+<header class="top-bar dash-top">
+  <div>
+    <h1 class="page-title">Add Client</h1>
+    <p class="page-subtitle">Capture a lead or client with pipeline details</p>
+  </div>
+</header>
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}{% for category, message in messages %}<div class="alert alert-{{ category }}" style="margin:16px 28px">{{ message }}</div>{% endfor %}{% endif %}
+{% endwith %}
+<div class="form-shell">
+  <form method="POST" class="form-card">
+    <p class="sec">Contact</p>
+    <div class="g">
+      <div class="fg full"><label>Full name *</label><input type="text" name="full_name" required placeholder="Client full name"></div>
+      <div class="fg"><label>Email</label><input type="email" name="email" placeholder="name@email.com"></div>
+      <div class="fg"><label>Phone</label><input type="text" name="phone" placeholder="+91 …"></div>
+      <div class="fg full"><label>Address</label><input type="text" name="address" placeholder="Current address"></div>
+    </div>
+    <p class="sec">Pipeline</p>
+    <div class="g">
+      <div class="fg">
+        <label>Status</label>
+        <select name="status">
+          <option value="lead">Lead</option>
+          <option value="contacted">Contacted</option>
+          <option value="qualified">Qualified</option>
+          <option value="negotiation">Negotiation</option>
+          <option value="closed">Closed</option>
+          <option value="lost">Lost</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label>Source</label>
+        <input type="text" name="source" placeholder="Website, referral, walk-in…">
+      </div>
+      <div class="fg">
+        <label>Assigned agent</label>
+        <select name="agent_id">
+          <option value="">— Unassigned —</option>
+          {% for a in agents %}<option value="{{ a.id }}">{{ a.full_name }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="fg">
+        <label>Budget</label>
+        <input type="number" name="budget" min="0" step="any" placeholder="Max budget">
+      </div>
+      <div class="fg">
+        <label>Interest</label>
+        <input type="text" name="interest" placeholder="Buy / Rent / 3BHK…">
+      </div>
+      <div class="fg">
+        <label>Preferred city</label>
+        <input type="text" name="preferred_city" placeholder="City of interest">
+      </div>
+      <div class="fg full">
+        <label>Notes</label>
+        <textarea name="notes" placeholder="Timeline, preferences, family size, financing…"></textarea>
+      </div>
+    </div>
+    <div class="form-ft">
+      <a href="{{ url_for('admin.admin_clients') }}" class="btn-cancel">Cancel</a>
+      <button type="submit" class="btn-save">Save client</button>
+    </div>
+  </form>
+</div>
+</main>
+</div>
+</body>
+</html>
