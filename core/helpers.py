@@ -7,6 +7,15 @@ def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if 'user_id' not in session:
+            from flask import request, jsonify
+            wants_json = (
+                request.path.endswith('/chat')
+                or 'application/json' in (request.headers.get('Accept') or '')
+                or request.is_json
+                or request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+            )
+            if wants_json:
+                return jsonify({'error': 'Please log in to continue.', 'reply': None}), 401
             flash('Please log in to access this page.', 'warning')
             return redirect(url_for('auth.login'))
         return f(*args, **kwargs)
@@ -17,10 +26,21 @@ def role_required(*roles):
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
+            from flask import request, jsonify
+            wants_json = (
+                request.path.endswith('/chat')
+                or 'application/json' in (request.headers.get('Accept') or '')
+                or request.is_json
+                or request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+            )
             if 'user_id' not in session:
+                if wants_json:
+                    return jsonify({'error': 'Please log in to continue.', 'reply': None}), 401
                 flash('Please log in to access this page.', 'warning')
                 return redirect(url_for('auth.login'))
             if session.get('role') not in roles:
+                if wants_json:
+                    return jsonify({'error': 'You do not have permission for this action.', 'reply': None}), 403
                 flash('You do not have permission to access this page.', 'danger')
                 return redirect(url_for('auth.role_redirect'))
             return f(*args, **kwargs)
@@ -45,9 +65,9 @@ def set_setting(key, value):
 
 def format_money(amount, currency=None):
     if amount is None:
-        return '—'
+        return '\u2014'
     currency = currency or get_setting('currency', 'INR')
-    symbols = {'USD': '$', 'INR': '₹', 'AED': 'AED '}
+    symbols = {'USD': '$', 'INR': '\u20b9', 'AED': 'AED '}
     sym = symbols.get(currency, currency + ' ')
     try:
         return f"{sym}{float(amount):,.0f}"
@@ -68,7 +88,6 @@ def log_activity(action, entity_type=None, entity_id=None, details=None):
         )
         db.commit()
     except Exception as e:
-        # Never break the main request; log to stderr for debugging
         try:
             import sys
             print(f'[log_activity] failed: {e}', file=sys.stderr)
