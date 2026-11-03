@@ -51,6 +51,10 @@ def create_app():
         init_db()
         migrate_db()
 
+    @app.get('/healthz')
+    def healthz():
+        return {'ok': True}, 200
+
     return app
 
 
