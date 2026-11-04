@@ -16,7 +16,7 @@
       'background:#9a3412', 'color:#fff7ed', 'display:none',
       'box-shadow:0 4px 16px rgba(0,0,0,.18)'
     ].join(';');
-    el.textContent = 'You are offline — Estacle is in offline mode. Changes stay local until you reconnect.';
+    el.innerHTML = 'You are offline — <a href="/offline-app" style="color:#fff;text-decoration:underline">Open offline CRM</a>';
     document.body.appendChild(el);
     return el;
   }
@@ -53,6 +53,18 @@
     } catch (e) {}
   }
 
+  function backgroundSnapshot() {
+    if (!navigator.onLine) return;
+    fetch('/api/offline/snapshot', {
+      credentials: 'same-origin',
+      headers: { 'Accept': 'application/json' }
+    }).then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (json) {
+        if (!json || !json.ok || !window.EstacleOfflineDB) return;
+        return EstacleOfflineDB.saveSnapshot(json);
+      }).catch(function () {});
+  }
+
   function goOffline() {
     setClientOffline(true);
     notifyServerMode('offline');
@@ -62,21 +74,25 @@
     setClientOffline(false);
     notifyServerMode('online');
     try { localStorage.setItem('estacle_auto_offline', '0'); } catch (e) {}
+    backgroundSnapshot();
   }
 
   function syncFromNavigator() {
-    if (typeof navigator.onLine === 'boolean' && !navigator.onLine) {
-      goOffline();
-    } else {
-      goOnline();
-    }
+    if (typeof navigator.onLine === 'boolean' && !navigator.onLine) goOffline();
+    else goOnline();
   }
 
   window.addEventListener('offline', goOffline);
   window.addEventListener('online', goOnline);
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', syncFromNavigator);
+    document.addEventListener('DOMContentLoaded', function () {
+      syncFromNavigator();
+      var s = document.createElement('script');
+      s.src = '/static/js/offline-db.js';
+      s.onload = backgroundSnapshot;
+      document.head.appendChild(s);
+    });
   } else {
     syncFromNavigator();
   }
