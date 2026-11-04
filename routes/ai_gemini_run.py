@@ -12,13 +12,13 @@ from routes.ai_tools import TOOL_IMPL, GEMINI_TOOLS, SYSTEM_PROMPT
 
 API_BASE = "https://generativelanguage.googleapis.com/v1beta"
 MODEL_CANDIDATES = [
-    "gemini-2.0-flash",
-    "gemini-2.0-flash-001",
-    "gemini-1.5-flash",
-    "gemini-1.5-flash-latest",
-    "gemini-1.5-flash-8b",
+    "gemini-2.5-flash",
     "gemini-flash-latest",
-    "gemini-pro",
+    "gemini-2.5-flash-lite",
+    "gemini-3.5-flash",
+    "gemini-3.8-flash",
+    "gemini-pro-latest",
+    "gemini-2.5-pro",
 ]
 
 
