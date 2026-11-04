@@ -65,9 +65,9 @@ def set_setting(key, value):
 
 def format_money(amount, currency=None):
     if amount is None:
-        return '\u2014'
+        return '-'
     currency = currency or get_setting('currency', 'INR')
-    symbols = {'USD': '$', 'INR': '\u20b9', 'AED': 'AED '}
+    symbols = {'USD': '$', 'INR': 'Rs.', 'AED': 'AED '}
     sym = symbols.get(currency, currency + ' ')
     try:
         return f"{sym}{float(amount):,.0f}"
@@ -75,8 +75,105 @@ def format_money(amount, currency=None):
         return str(amount)
 
 
+def is_online_mode() -> bool:
+    """True when the platform is in online (sync) mode."""
+    return (get_setting('connection_mode', 'online') or 'online').lower() != 'offline'
+
+
+def queue_sync_event(entity_type, entity_id, action, payload=None):
+    """Record a local change made while offline so it can sync when online."""
+    try:
+        import json
+        from datetime import datetime
+        db = get_db()
+        db.execute(
+            """CREATE TABLE IF NOT EXISTS pending_sync (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                entity_type TEXT NOT NULL,
+                entity_id INTEGER,
+                action TEXT NOT NULL,
+                payload TEXT,
+                created_at TEXT NOT NULL,
+                synced_at TEXT
+            )"""
+        )
+        now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        db.execute(
+            'INSERT INTO pending_sync (entity_type, entity_id, action, payload, created_at) VALUES (?, ?, ?, ?, ?)',
+            (
+                entity_type,
+                entity_id,
+                action,
+                json.dumps(payload, default=str) if payload is not None else None,
+                now,
+            ),
+        )
+        db.commit()
+    except Exception as e:
+        try:
+            import sys
+            print(f'[queue_sync_event] {e}', file=sys.stderr)
+        except Exception:
+            pass
+
+
+def pending_sync_count() -> int:
+    try:
+        db = get_db()
+        db.execute(
+            """CREATE TABLE IF NOT EXISTS pending_sync (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                entity_type TEXT NOT NULL,
+                entity_id INTEGER,
+                action TEXT NOT NULL,
+                payload TEXT,
+                created_at TEXT NOT NULL,
+                synced_at TEXT
+            )"""
+        )
+        row = db.execute('SELECT COUNT(*) AS c FROM pending_sync WHERE synced_at IS NULL').fetchone()
+        return int(row['c'] if row else 0)
+    except Exception:
+        return 0
+
+
+def flush_sync_queue() -> int:
+    """Mark all pending offline changes as synced. Returns number flushed."""
+    try:
+        from datetime import datetime
+        db = get_db()
+        db.execute(
+            """CREATE TABLE IF NOT EXISTS pending_sync (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                entity_type TEXT NOT NULL,
+                entity_id INTEGER,
+                action TEXT NOT NULL,
+                payload TEXT,
+                created_at TEXT NOT NULL,
+                synced_at TEXT
+            )"""
+        )
+        now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        cur = db.execute(
+            'UPDATE pending_sync SET synced_at = ? WHERE synced_at IS NULL',
+            (now,),
+        )
+        db.commit()
+        n = cur.rowcount or 0
+        if n:
+            log_activity('Sync completed', 'system', None, f'Flushed {n} offline change(s) to online mode')
+        return n
+    except Exception as e:
+        try:
+            import sys
+            print(f'[flush_sync_queue] {e}', file=sys.stderr)
+        except Exception:
+            pass
+        return 0
+
+
 def log_activity(action, entity_type=None, entity_id=None, details=None):
-    """Record an action in activity_log. Uses local wall-clock time so 'today' filters work."""
+    """Record an action in activity_log. Uses local wall-clock time so today filters work."""
     try:
         from datetime import datetime
         db = get_db()
@@ -87,6 +184,8 @@ def log_activity(action, entity_type=None, entity_id=None, details=None):
             (uid, action, entity_type, entity_id, details, now)
         )
         db.commit()
+        if not is_online_mode() and entity_type and entity_type != 'system':
+            queue_sync_event(entity_type, entity_id, action, {'details': details, 'user_id': uid})
     except Exception as e:
         try:
             import sys
