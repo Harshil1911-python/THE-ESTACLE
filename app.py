@@ -7,6 +7,7 @@ from routes.admin import admin as admin_bp
 from routes.agent import agent as agent_bp
 from routes.client import client as client_bp
 from routes.connection import connection_bp
+from routes.offline_api import offline_api
 
 
 def create_app():
@@ -67,6 +68,7 @@ def create_app():
     app.register_blueprint(agent_bp)
     app.register_blueprint(client_bp)
     app.register_blueprint(connection_bp)
+    app.register_blueprint(offline_api)
 
     with app.app_context():
         init_db()
@@ -84,6 +86,10 @@ def create_app():
     @app.route('/offline')
     def offline_page():
         return render_template('offline.html')
+
+    @app.route('/offline-app')
+    def offline_app_page():
+        return render_template('offline_app.html')
 
     @app.get('/healthz')
     def healthz():

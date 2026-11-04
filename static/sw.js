@@ -1,11 +1,14 @@
-/* Estacle service worker — offline shell + fallback */
-const CACHE = 'estacle-v3';
+/* Estacle service worker — full offline CRM shell */
+const CACHE = 'estacle-offline-v5';
 const PRECACHE = [
+  '/offline-app',
   '/offline',
   '/static/css/admin.css',
   '/static/css/login.css',
   '/static/js/app-nav.js',
   '/static/js/network-status.js',
+  '/static/js/offline-db.js',
+  '/static/js/offline-app.js',
   '/static/images/logo.png'
 ];
 
@@ -34,6 +37,8 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(req.url);
 
+  if (url.pathname.startsWith('/api/')) return;
+
   if (isNavigation(req)) {
     event.respondWith(
       fetch(req)
@@ -43,7 +48,9 @@ self.addEventListener('fetch', (event) => {
           return res;
         })
         .catch(() =>
-          caches.match(req).then((cached) => cached || caches.match('/offline'))
+          caches.match('/offline-app')
+            .then((c) => c || caches.match(req))
+            .then((c) => c || caches.match('/offline'))
         )
     );
     return;
