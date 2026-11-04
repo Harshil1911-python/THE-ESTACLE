@@ -11,6 +11,7 @@ import urllib.request
 from routes.ai_tools import TOOL_IMPL, GEMINI_TOOLS, SYSTEM_PROMPT
 
 API_BASE = "https://generativelanguage.googleapis.com/v1beta"
+
 MODEL_CANDIDATES = [
     "gemini-2.5-flash",
     "gemini-flash-latest",
@@ -47,12 +48,24 @@ def _http_json(method: str, url: str, api_key: str, body: dict | None = None, ti
 
 def _extract_text_from_api(resp: dict) -> str:
     chunks = []
+    thought_chunks = []
     for cand in resp.get("candidates") or []:
         content = cand.get("content") or {}
         for part in content.get("parts") or []:
-            if isinstance(part.get("text"), str) and part["text"].strip():
-                chunks.append(part["text"])
-    return "\n".join(chunks).strip()
+            if not isinstance(part, dict):
+                continue
+            text = part.get("text")
+            if not isinstance(text, str) or not text.strip():
+                continue
+            if part.get("thought") is True or part.get("thoughtSignature"):
+                thought_chunks.append(text.strip())
+            else:
+                chunks.append(text.strip())
+    if chunks:
+        return "\n".join(chunks).strip()
+    if thought_chunks:
+        return "\n".join(thought_chunks).strip()
+    return ""
 
 
 def _extract_function_calls(resp: dict) -> list:
@@ -60,6 +73,8 @@ def _extract_function_calls(resp: dict) -> list:
     for cand in resp.get("candidates") or []:
         content = cand.get("content") or {}
         for part in content.get("parts") or []:
+            if not isinstance(part, dict):
+                continue
             fc = part.get("functionCall") or part.get("function_call")
             if not fc:
                 continue
@@ -112,8 +127,12 @@ def _run_tool(name: str, args: dict) -> dict:
         return {"error": str(e)}
 
 
+def _call_model(api_key: str, model: str, body: dict) -> dict:
+    url = f"{API_BASE}/models/{model}:generateContent"
+    return _http_json("POST", url, api_key, body)
+
+
 def run_gemini(api_key: str, user_message: str, history: list | None = None) -> dict:
-    """Call Gemini with function calling. Returns {reply, tool_results, error}."""
     if not api_key or not str(api_key).strip():
         return {"error": "Missing Gemini API key", "reply": None, "tool_results": []}
 
@@ -125,6 +144,14 @@ def run_gemini(api_key: str, user_message: str, history: list | None = None) -> 
         role = h.get("role", "user")
         content = (h.get("content") or "").strip()
         if not content:
+            continue
+        if role == "assistant" and content in (
+            "(no response)",
+            "No reply from Gemini. Open DevTools > Network > /admin/ai/chat and check the response.",
+            "No reply from Gemini. Refresh the page and try again.",
+        ):
+            continue
+        if content.startswith("Error:"):
             continue
         api_role = "user" if role == "user" else "model"
         contents.append({"role": api_role, "parts": [{"text": content}]})
@@ -145,9 +172,8 @@ def run_gemini(api_key: str, user_message: str, history: list | None = None) -> 
     response = None
 
     for model in MODEL_CANDIDATES:
-        url = f"{API_BASE}/models/{model}:generateContent"
         try:
-            response = _http_json("POST", url, api_key, body_base)
+            response = _call_model(api_key, model, body_base)
             model_used = model
             break
         except Exception as e:
@@ -156,11 +182,14 @@ def run_gemini(api_key: str, user_message: str, history: list | None = None) -> 
                 body_plain = {
                     "tools": tools,
                     "contents": [
-                        {"role": "user", "parts": [{"text": SYSTEM_PROMPT + "\n\nUser: " + user_message}]}
+                        {
+                            "role": "user",
+                            "parts": [{"text": SYSTEM_PROMPT + "\n\nUser: " + user_message}],
+                        }
                     ],
                     "generationConfig": body_base["generationConfig"],
                 }
-                response = _http_json("POST", url, api_key, body_plain)
+                response = _call_model(api_key, model, body_plain)
                 model_used = model
                 contents = body_plain["contents"]
                 break
@@ -202,7 +231,6 @@ def run_gemini(api_key: str, user_message: str, history: list | None = None) -> 
             })
         contents.append({"role": "user", "parts": fn_response_parts})
 
-        url = f"{API_BASE}/models/{model_used}:generateContent"
         body = {
             "systemInstruction": {"parts": [{"text": SYSTEM_PROMPT}]},
             "tools": tools,
@@ -210,7 +238,7 @@ def run_gemini(api_key: str, user_message: str, history: list | None = None) -> 
             "generationConfig": body_base["generationConfig"],
         }
         try:
-            response = _http_json("POST", url, api_key, body)
+            response = _call_model(api_key, model_used, body)
         except Exception as e:
             summary = "; ".join(
                 f"{t['tool']}: {json.dumps(t['result'], default=str)[:120]}"
@@ -238,9 +266,9 @@ def run_gemini(api_key: str, user_message: str, history: list | None = None) -> 
             }
         else:
             try:
-                url = f"{API_BASE}/models/{model_used}:generateContent"
-                plain = _http_json("POST", url, api_key, {
+                plain = _call_model(api_key, model_used, {
                     "contents": [{"role": "user", "parts": [{"text": user_message}]}],
+                    "generationConfig": {"temperature": 0.5, "maxOutputTokens": 1024},
                 })
                 reply = _extract_text_from_api(plain)
             except Exception as e:
@@ -252,8 +280,8 @@ def run_gemini(api_key: str, user_message: str, history: list | None = None) -> 
             if not reply:
                 return {
                     "error": (
-                        f"Gemini returned empty reply (model={model_used}, finish={reason}). "
-                        "Check the API key is valid and Generative Language API is enabled."
+                        f"Gemini returned empty reply (model={model_used}, finish={reason or 'unknown'}). "
+                        "Try a new chat (refresh page) or another model request."
                     ),
                     "reply": None,
                     "tool_results": tool_results,
