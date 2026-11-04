@@ -40,6 +40,19 @@ def create_app():
         except Exception:
             pass
 
+    @app.context_processor
+    def inject_connection_mode():
+        try:
+            from core.helpers import is_online_mode, pending_sync_count, get_setting
+            online = is_online_mode()
+            return {
+                'app_is_online': online,
+                'app_connection_mode': 'online' if online else 'offline',
+                'app_pending_sync': pending_sync_count() if not online else 0,
+            }
+        except Exception:
+            return {'app_is_online': True, 'app_connection_mode': 'online', 'app_pending_sync': 0}
+
     app.register_blueprint(auth_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(agent_bp)
