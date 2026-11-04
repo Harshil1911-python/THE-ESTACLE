@@ -139,7 +139,6 @@
     <div class="sidebar-footer">
         <a href="{{ url_for('auth.logout') }}" class="logout-btn">Log out</a>
     </div>
-</aside>
 <style>
 .offline-banner {
   margin: 8px 12px 4px; padding: 8px 10px; border-radius: 10px;
@@ -147,6 +146,8 @@
   font-size: 12px; font-weight: 600; text-align: center;
 }
 </style>
+</aside>
+<script src="{{ url_for('static', filename='js/network-status.js') }}"></script>
 <script src="{{ url_for('static', filename='js/app-nav.js') }}"></script>
 <script>
 (function(){
