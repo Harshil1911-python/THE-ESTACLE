@@ -6,6 +6,7 @@ from routes.auth import auth as auth_bp
 from routes.admin import admin as admin_bp
 from routes.agent import agent as agent_bp
 from routes.client import client as client_bp
+from routes.connection import connection_bp
 
 
 def create_app():
@@ -45,18 +46,27 @@ def create_app():
         try:
             from core.helpers import is_online_mode, pending_sync_count, get_setting
             online = is_online_mode()
+            pending = pending_sync_count() if not online else 0
+            mode = 'online' if online else 'offline'
             return {
                 'app_is_online': online,
-                'app_connection_mode': 'online' if online else 'offline',
-                'app_pending_sync': pending_sync_count() if not online else 0,
+                'app_connection_mode': mode,
+                'app_pending_sync': pending,
+                'is_online': online,
+                'connection_mode': mode,
+                'pending_sync': pending,
             }
         except Exception:
-            return {'app_is_online': True, 'app_connection_mode': 'online', 'app_pending_sync': 0}
+            return {
+                'app_is_online': True, 'app_connection_mode': 'online', 'app_pending_sync': 0,
+                'is_online': True, 'connection_mode': 'online', 'pending_sync': 0,
+            }
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(agent_bp)
     app.register_blueprint(client_bp)
+    app.register_blueprint(connection_bp)
 
     with app.app_context():
         init_db()
