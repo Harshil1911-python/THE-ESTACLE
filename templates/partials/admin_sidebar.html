@@ -131,10 +131,22 @@
             </div>
         </div>
     </nav>
+    {% if app_connection_mode is defined and app_connection_mode == 'offline' %}
+    <div class="offline-banner" title="Offline mode - changes stay local until you go Online in Settings">
+        Offline{% if app_pending_sync %} · {{ app_pending_sync }} pending{% endif %}
+    </div>
+    {% endif %}
     <div class="sidebar-footer">
         <a href="{{ url_for('auth.logout') }}" class="logout-btn">Log out</a>
     </div>
 </aside>
+<style>
+.offline-banner {
+  margin: 8px 12px 4px; padding: 8px 10px; border-radius: 10px;
+  background: #fff7ed; border: 1px solid #fed7aa; color: #9a3412;
+  font-size: 12px; font-weight: 600; text-align: center;
+}
+</style>
 <script src="{{ url_for('static', filename='js/app-nav.js') }}"></script>
 <script>
 (function(){
