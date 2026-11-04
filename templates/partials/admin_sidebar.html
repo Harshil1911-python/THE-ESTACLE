@@ -5,7 +5,7 @@
         </div>
     </div>
     <nav class="sidebar-nav">
-        <div class="nav-dropdown {% if active in ['dashboard', 'analytics', 'search', 'ai'] %}open has-active{% endif %}">
+        <div class="nav-dropdown {% if active in ['dashboard', 'analytics', 'search'] %}open has-active{% endif %}">
             <button type="button" class="nav-dropdown-toggle" onclick="this.parentElement.classList.toggle('open')">
                 <svg class="nav-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
                 <span>Overview</span>
@@ -15,7 +15,6 @@
                 <a href="{{ url_for('admin.admin_dashboard') }}" class="nav-subitem {% if active == 'dashboard' %}active{% endif %}">Dashboard</a>
                 <a href="{{ url_for('admin.admin_analytics') }}" class="nav-subitem {% if active == 'analytics' %}active{% endif %}">Analytics</a>
                 <a href="{{ url_for('admin.admin_search') }}" class="nav-subitem {% if active == 'search' %}active{% endif %}">Global Search</a>
-                <a href="{{ url_for('ai.estacle_ai') }}" class="nav-subitem {% if active == 'ai' %}active{% endif %}">ESTACLE AI</a>
             </div>
         </div>
 
@@ -37,9 +36,9 @@
             </div>
         </div>
 
-        <div class="nav-dropdown {% if active in ['clients', 'add_client', 'leads', 'add_lead'] %}open has-active{% endif %}">
+        <div class="nav-dropdown {% if active in ['clients', 'add_client', 'leads', 'add_lead', 'client_detail'] %}open has-active{% endif %}">
             <button type="button" class="nav-dropdown-toggle" onclick="this.parentElement.classList.toggle('open')">
-                <svg class="nav-icon" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+                <svg class="nav-icon" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 <span>Clients</span>
                 <svg class="chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
             </button>
@@ -99,7 +98,7 @@
             </div>
         </div>
 
-        <div class="nav-dropdown {% if active == 'inquiries' %}open has-active{% endif %}">
+        <div class="nav-dropdown {% if active in ['inquiries'] %}open has-active{% endif %}">
             <button type="button" class="nav-dropdown-toggle" onclick="this.parentElement.classList.toggle('open')">
                 <svg class="nav-icon" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                 <span>Inquiries</span>
@@ -110,7 +109,7 @@
             </div>
         </div>
 
-        <div class="nav-dropdown {% if active == 'activity' %}open has-active{% endif %}">
+        <div class="nav-dropdown {% if active in ['activity'] %}open has-active{% endif %}">
             <button type="button" class="nav-dropdown-toggle" onclick="this.parentElement.classList.toggle('open')">
                 <svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                 <span>Activity</span>
