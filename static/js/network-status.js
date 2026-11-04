@@ -12,72 +12,44 @@
     el.setAttribute('role', 'status');
     el.style.cssText = [
       'position:fixed', 'top:0', 'left:0', 'right:0', 'z-index:99999',
-      'padding:10px 16px', 'text-align:center', 'font:600 13px/1.4 Inter,system-ui,sans-serif',
+      'padding:10px 16px', 'text-align:center',
+      'font:600 13px/1.4 Inter,system-ui,sans-serif',
       'background:#9a3412', 'color:#fff7ed', 'display:none',
       'box-shadow:0 4px 16px rgba(0,0,0,.18)'
     ].join(';');
-    el.innerHTML = 'You are offline — <a href="/offline-app" style="color:#fff;text-decoration:underline">Open offline CRM</a>';
+    el.textContent = 'Offline mode — same dashboard, data from this device. Changes will sync when you are back online.';
     document.body.appendChild(el);
     return el;
   }
 
-  function setClientOffline(offline) {
-    try {
-      localStorage.setItem('estacle_net', offline ? 'offline' : 'online');
-      localStorage.setItem('estacle_auto_offline', offline ? '1' : '0');
-    } catch (e) {}
+  function setOfflineUI(offline) {
+    try { localStorage.setItem('estacle_net', offline ? 'offline' : 'online'); } catch (e) {}
     var banner = ensureBanner();
     if (offline) {
       banner.style.display = 'block';
-      document.documentElement.classList.add('estacle-offline');
       if (document.body) document.body.style.paddingTop = '40px';
+      document.documentElement.classList.add('estacle-offline');
     } else {
       banner.style.display = 'none';
-      document.documentElement.classList.remove('estacle-offline');
       if (document.body) document.body.style.paddingTop = '';
+      document.documentElement.classList.remove('estacle-offline');
     }
+    try {
+      window.dispatchEvent(new CustomEvent('estacle:connection', { detail: { offline: offline } }));
+    } catch (e) {}
   }
 
-  function notifyServerMode(mode) {
+  function goOffline() { setOfflineUI(true); }
+  function goOnline() {
+    setOfflineUI(false);
     try {
-      var body = new URLSearchParams();
-      body.set('connection_mode', mode);
-      fetch('/admin/settings/connection', {
-        method: 'POST',
-        body: body,
-        credentials: 'same-origin',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        keepalive: true,
-        redirect: 'manual'
+      if (window.API && API.pushPending) API.pushPending().then(function () {
+        if (API.snapshot) return API.snapshot();
       }).catch(function () {});
     } catch (e) {}
   }
 
-  function backgroundSnapshot() {
-    if (!navigator.onLine) return;
-    fetch('/api/offline/snapshot', {
-      credentials: 'same-origin',
-      headers: { 'Accept': 'application/json' }
-    }).then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (json) {
-        if (!json || !json.ok || !window.EstacleOfflineDB) return;
-        return EstacleOfflineDB.saveSnapshot(json);
-      }).catch(function () {});
-  }
-
-  function goOffline() {
-    setClientOffline(true);
-    notifyServerMode('offline');
-  }
-
-  function goOnline() {
-    setClientOffline(false);
-    notifyServerMode('online');
-    try { localStorage.setItem('estacle_auto_offline', '0'); } catch (e) {}
-    backgroundSnapshot();
-  }
-
-  function syncFromNavigator() {
+  function sync() {
     if (typeof navigator.onLine === 'boolean' && !navigator.onLine) goOffline();
     else goOnline();
   }
@@ -85,17 +57,8 @@
   window.addEventListener('offline', goOffline);
   window.addEventListener('online', goOnline);
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function () {
-      syncFromNavigator();
-      var s = document.createElement('script');
-      s.src = '/static/js/offline-db.js';
-      s.onload = backgroundSnapshot;
-      document.head.appendChild(s);
-    });
-  } else {
-    syncFromNavigator();
-  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', sync);
+  else sync();
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
