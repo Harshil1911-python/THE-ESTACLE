@@ -6,7 +6,6 @@ from routes.auth import auth as auth_bp
 from routes.admin import admin as admin_bp
 from routes.agent import agent as agent_bp
 from routes.client import client as client_bp
-from routes.ai_assistant import ai_bp
 
 
 def create_app():
@@ -45,7 +44,6 @@ def create_app():
     app.register_blueprint(admin_bp)
     app.register_blueprint(agent_bp)
     app.register_blueprint(client_bp)
-    app.register_blueprint(ai_bp)
 
     with app.app_context():
         init_db()
