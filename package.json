@@ -1,0 +1,12 @@
+{
+  "name": "the-estacle",
+  "version": "2.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node server/server.js",
+    "postinstall": "cd server && npm install --omit=dev"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
