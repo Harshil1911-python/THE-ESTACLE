@@ -3,9 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Estacle | Admin – Settings</title>
+    <title>Estacle | Admin - Settings</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+.connection-mode-card {
+    display: flex; align-items: center; justify-content: space-between; gap: 20px;
+    background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px;
+    padding: 16px 18px; margin-bottom: 22px; flex-wrap: wrap;
+}
+.connection-mode-copy strong { font-size: 15px; color: #0f172a; }
+.pending-sync-note { margin: 8px 0 0; font-size: 12.5px; color: #b45309; font-weight: 500; }
+.mode-toggle { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; }
+.mode-toggle input { position: absolute; opacity: 0; width: 0; height: 0; }
+.mode-track {
+    width: 52px; height: 30px; border-radius: 999px; background: #cbd5e1;
+    position: relative; transition: background .2s ease;
+}
+.mode-knob {
+    position: absolute; top: 3px; left: 3px; width: 24px; height: 24px;
+    border-radius: 50%; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.15);
+    transition: transform .2s ease;
+}
+.mode-toggle input:checked + .mode-track { background: #16a34a; }
+.mode-toggle input:checked + .mode-track .mode-knob { transform: translateX(22px); }
+.mode-text { font-size: 13px; font-weight: 600; color: #334155; min-width: 56px; }
+.mode-toggle input:checked ~ .mode-text .off { display: none; }
+.mode-toggle input:not(:checked) ~ .mode-text .on { display: none; }
+</style>
 </head>
 <body>
 <div class="app-layout">
@@ -23,14 +48,42 @@
         {% endwith %}
 
         <div class="panel form-panel">
+            <div class="form-section-title">Connection mode</div>
+            <div class="connection-mode-card">
+                <div class="connection-mode-copy">
+                    <strong>{% if is_online %}Online mode{% else %}Offline mode{% endif %}</strong>
+                    <p class="form-hint" style="margin:6px 0 0;">
+                        {% if is_online %}
+                        Data is available for sync. All changes are treated as live.
+                        {% else %}
+                        Working offline. Data stays on this server and is queued until you switch to Online.
+                        {% endif %}
+                    </p>
+                    {% if pending_sync %}
+                    <p class="pending-sync-note">{{ pending_sync }} change(s) waiting to sync</p>
+                    {% endif %}
+                </div>
+                <form method="POST" action="{{ url_for('connection.set_connection_mode') }}" class="connection-mode-form">
+                    <input type="hidden" name="connection_mode" id="connectionModeValue" value="{{ connection_mode }}">
+                    <label class="mode-toggle" title="Toggle online / offline">
+                        <input type="checkbox" id="modeToggle" {% if is_online %}checked{% endif %} onchange="this.form.connection_mode.value=this.checked?'online':'offline'; this.form.submit();">
+                        <span class="mode-track"><span class="mode-knob"></span></span>
+                        <span class="mode-text">
+                            <span class="on">Online</span>
+                            <span class="off">Offline</span>
+                        </span>
+                    </label>
+                </form>
+            </div>
+
             <form method="POST" class="admin-form">
                 <div class="form-section-title">Currency</div>
                 <div class="form-group">
                     <label>Default currency</label>
                     <select name="currency">
-                        <option value="USD" {% if currency == 'USD' %}selected{% endif %}>USD – US Dollar ($)</option>
-                        <option value="INR" {% if currency == 'INR' %}selected{% endif %}>INR – Indian Rupee (₹)</option>
-                        <option value="AED" {% if currency == 'AED' %}selected{% endif %}>AED – UAE Dirham</option>
+                        <option value="USD" {% if currency == 'USD' %}selected{% endif %}>USD - US Dollar ($)</option>
+                        <option value="INR" {% if currency == 'INR' %}selected{% endif %}>INR - Indian Rupee</option>
+                        <option value="AED" {% if currency == 'AED' %}selected{% endif %}>AED - UAE Dirham</option>
                     </select>
                     <span class="form-hint">Used for all prices across admin and client portal</span>
                 </div>
