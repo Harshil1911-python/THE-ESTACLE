@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Estacle Offline</title>
+<style>
+  :root {
+    --bg: #0b1220; --panel: #111827; --line: #1f2a3d; --text: #e5eefb;
+    --muted: #93a4bd; --accent: #6366f1; --good: #16a34a; --bad: #c2410c; --warn: #d97706;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: Inter, system-ui, -apple-system, sans-serif;
+    background: var(--bg); color: var(--text); min-height: 100vh;
+  }
+  .shell { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+  @media (max-width: 800px) { .shell { grid-template-columns: 1fr; } .side { position: sticky; top: 0; z-index: 5; } }
+  .side { background: #0f172a; border-right: 1px solid var(--line); padding: 18px 14px; }
+  .logo { font-weight: 800; letter-spacing: .02em; margin-bottom: 18px; font-size: 18px; }
+  .logo span { color: var(--accent); }
+  .nav-btn {
+    width: 100%; text-align: left; border: 0; background: transparent; color: var(--muted);
+    padding: 10px 12px; border-radius: 10px; cursor: pointer; font: 600 13.5px Inter, system-ui, sans-serif;
+    margin-bottom: 4px;
+  }
+  .nav-btn.active, .nav-btn:hover { background: #1e293b; color: #fff; }
+  .main { padding: 18px 20px 40px; }
+  .top { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .pill { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 6px 12px; font-size: 12px; font-weight: 700; }
+  .pill.on { background: rgba(22,163,74,.15); color: #4ade80; border: 1px solid rgba(22,163,74,.35); }
+  .pill.off { background: rgba(194,65,12,.15); color: #fdba74; border: 1px solid rgba(194,65,12,.35); }
+  .pill.warn { background: rgba(217,119,6,.15); color: #fbbf24; border: 1px solid rgba(217,119,6,.35); }
+  .btn, button.btn {
+    border: 1px solid var(--line); background: #1e293b; color: var(--text);
+    border-radius: 10px; padding: 9px 14px; font-weight: 600; font-size: 13px; cursor: pointer;
+  }
+  .btn.primary { background: var(--accent); border-color: transparent; color: #fff; }
+  .hint { color: var(--muted); font-size: 13px; margin: 0; }
+  .grid.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .stat { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px; }
+  .stat .v { font-size: 24px; font-weight: 800; }
+  .stat .l { color: var(--muted); font-size: 12px; margin-top: 4px; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; margin-bottom: 14px; }
+  .panel h3 { margin: 0 0 12px; font-size: 15px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 12px; }
+  .empty { color: var(--muted); font-size: 13.5px; }
+  .row-between { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+  .form { display: grid; gap: 8px; margin-bottom: 12px; }
+  .form.hidden { display: none; }
+  .form input, .form select {
+    height: 40px; border-radius: 10px; border: 1px solid var(--line); background: #0b1220;
+    color: var(--text); padding: 0 12px; font: 14px Inter, system-ui, sans-serif;
+  }
+  a.online-link { color: #a5b4fc; font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="side">
+    <div class="logo">Estacle <span>Offline</span></div>
+    <button class="nav-btn active" data-tab="dashboard">Dashboard</button>
+    <button class="nav-btn" data-tab="clients">Clients</button>
+    <button class="nav-btn" data-tab="leads">Leads</button>
+    <button class="nav-btn" data-tab="properties">Properties</button>
+    <button class="nav-btn" data-tab="tasks">Tasks</button>
+    <button class="nav-btn" data-tab="appointments">Appointments</button>
+    <div style="margin-top:18px">
+      <a class="online-link" href="/admin/dashboard">Open full online app</a>
+    </div>
+  </aside>
+  <main class="main">
+    <div class="top">
+      <div>
+        <span class="pill off" id="netPill">Offline</span>
+        <span class="pill on" id="pendingBadge">Synced</span>
+        <p class="hint" id="syncHint" style="margin-top:8px">Loading…</p>
+        <p class="hint" id="lastSync"></p>
+      </div>
+      <button class="btn primary" id="syncBtn" type="button">Sync now</button>
+    </div>
+    <div id="view"></div>
+  </main>
+</div>
+<script src="{{ url_for('static', filename='js/offline-db.js') }}"></script>
+<script src="{{ url_for('static', filename='js/offline-app.js') }}"></script>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(function () {});
+}
+</script>
+</body>
+</html>
