@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, render_template
 import os
 
 from core.db import get_db, close_db, init_db, migrate_db
@@ -71,6 +71,19 @@ def create_app():
     with app.app_context():
         init_db()
         migrate_db()
+
+    @app.route('/sw.js')
+    def service_worker():
+        from flask import send_from_directory, make_response
+        resp = make_response(send_from_directory(app.static_folder, 'sw.js'))
+        resp.headers['Content-Type'] = 'application/javascript; charset=utf-8'
+        resp.headers['Service-Worker-Allowed'] = '/'
+        resp.headers['Cache-Control'] = 'no-cache'
+        return resp
+
+    @app.route('/offline')
+    def offline_page():
+        return render_template('offline.html')
 
     @app.get('/healthz')
     def healthz():
